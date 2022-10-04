@@ -12,6 +12,7 @@ class Tile:
     URL_PARAMS: str = "&imageSR=&time=&format=tiff&pixelType=F64&noData=&noDataInterpretation=esriNoDataMatchAny&interpolation=+RSP_BilinearInterpolation&compression=&compressionQuality=&bandIds=&mosaicRule=&renderingRule=&f=image"
     DATA_RESOLUTION = 0.5
     DATA_FACTOR = 2
+    DATA_OFFSET = 1
 
     def __init__(self, data_dir: str = "out", filename: str = "data.tiff"):
         self.data_dir = data_dir
@@ -30,10 +31,16 @@ class Tile:
     def from_ahn4_array(cls, xy_coords: np.ndarray) -> 'Tile':
         _, xmin, ymin = xy_coords.min(axis=0)
         _, xmax, ymax = xy_coords.max(axis=0)
+        print(f"Xmin, Ymin: ({xmin}, {ymin})\tXmax, Ymax: ({xmax}, {ymax})")
         return cls.from_ahn4_2points(xmin, ymin, xmax, ymax)
 
     @classmethod
     def from_ahn4_2points(cls, xmin: int, ymin: int, xmax: int, ymax: int) -> 'Tile':
+        xmin = xmin - 1
+        xmax = xmax + 1
+        ymin = ymin - 1
+        ymax = ymax + 1
+
         result = Tile()
         size_x = (xmax - xmin) * cls.DATA_FACTOR
         size_y = (ymax - ymin) * cls.DATA_FACTOR
@@ -55,12 +62,17 @@ class Tile:
         return z_points
 
     def get_z(self, x: float, y: float) -> float:
-        if self.xmin <= x and x < self.xmax and self.ymin <= y and y <= self.ymax:
-            idx = int((x - self.xmin) / self.DATA_RESOLUTION)
-            idy = int((self.ymax - y) / self.DATA_RESOLUTION)
-            return self.data[idy, idx]
-        else:
+        if x < self.xmin or x > self.xmax:
+            print(f"Invalid point: ({x}, {y}). X is not within: ({self.xmin}, {self.xmax})")
             return np.nan
+        
+        if y < self.ymin or y > self.ymax:
+            print(f"Invalid point: ({x}, {y}). Y is not within: ({self.ymin}, {self.ymax})")
+            return np.nan
+
+        idx = int((x - self.xmin) / self.DATA_RESOLUTION)
+        idy = int((self.ymax - y) / self.DATA_RESOLUTION)
+        return self.data[idy, idx]
 
 
 def main():
