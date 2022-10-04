@@ -1,0 +1,81 @@
+import argparse
+import os
+import urllib.request
+from typing import List
+
+import numpy as np
+from tifffile import imread
+
+
+class Tile:
+    URL_BASE: str = "https://ahn.arcgisonline.nl/arcgis/rest/services/Hoogtebestand/AHN4_DTM_50cm/ImageServer/exportImage?bbox="
+    URL_PARAMS: str = "&imageSR=&time=&format=tiff&pixelType=F64&noData=&noDataInterpretation=esriNoDataMatchAny&interpolation=+RSP_BilinearInterpolation&compression=&compressionQuality=&bandIds=&mosaicRule=&renderingRule=&f=image"
+    DATA_RESOLUTION = 0.5
+    DATA_FACTOR = 2
+
+    def __init__(self, data_dir: str = "out", filename: str = "data.tiff"):
+        self.data_dir = data_dir
+        self.filename = filename
+        
+        self.xmin = 0
+        self.xmax = 0
+        self.ymin = 0
+        self.ymax = 0
+        self.data = None
+
+        self.data_path = os.path.join(data_dir, filename)
+        os.makedirs(data_dir, exist_ok=True)
+
+    @classmethod
+    def from_ahn4_array(cls, xy_coords: np.ndarray) -> 'Tile':
+        _, xmin, ymin = xy_coords.min(axis=0)
+        _, xmax, ymax = xy_coords.max(axis=0)
+        return cls.from_ahn4_2points(xmin, ymin, xmax, ymax)
+
+    @classmethod
+    def from_ahn4_2points(cls, xmin: int, ymin: int, xmax: int, ymax: int) -> 'Tile':
+        result = Tile()
+        size_x = (xmax - xmin) * cls.DATA_FACTOR
+        size_y = (ymax - ymin) * cls.DATA_FACTOR
+        urllib.request.urlretrieve(
+            f"{cls.URL_BASE}{xmin},{ymin},{xmax},{ymax}&bboxSR=&size={size_x},{size_y}{cls.URL_PARAMS}",
+            f"{result.data_path}",
+        ) # note that this might include interpolated values, check the API for the details
+        result.xmin = xmin
+        result.ymax = ymax
+        result.data = imread(result.data_path)
+        result.xmax = xmin + int(result.data.shape[1] * cls.DATA_RESOLUTION)
+        result.ymin = ymax - int(result.data.shape[0] * cls.DATA_RESOLUTION)
+        return result
+
+    def get_z_for_array(self, xy_coords: np.ndarray) -> List[float]:
+        z_points = []
+        for row in range(xy_coords.shape[0]):
+            z_points.append(self.get_z(xy_coords[row, 1], xy_coords[row, 2]))
+        return z_points
+
+    def get_z(self, x: float, y: float) -> float:
+        if self.xmin <= x and x < self.xmax and self.ymin <= y and y <= self.ymax:
+            idx = int((x - self.xmin) / self.DATA_RESOLUTION)
+            idy = int((self.ymax - y) / self.DATA_RESOLUTION)
+            return self.data[idy, idx]
+        else:
+            return np.nan
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Extract Z points for XY coordinates in a csv file.")
+    parser.add_argument("-i", "--input_file", help="Path to the csv file.", required=True)
+    parser.add_argument("-o", "--output_file", help="Path to the csv file.", default="out/xyz.csv")
+    args = parser.parse_args()
+    
+    xy_coords = np.loadtxt(args.input_file, skiprows=1, delimiter=",")
+
+    tile = Tile.from_ahn4_array(xy_coords)
+    z_coords = tile.get_z_for_array(xy_coords)
+    xyz_coords = np.insert(xy_coords, 3, z_coords, axis=1)
+    np.savetxt(args.output_file, xyz_coords, delimiter=",")
+
+
+if __name__ == "__main__":
+    main()
