@@ -86,7 +86,7 @@ def main():
     tile = Tile.from_ahn4_array(xy_coords)
     z_coords = tile.get_z_for_array(xy_coords)
     xyz_coords = np.insert(xy_coords, 3, z_coords, axis=1)
-    np.savetxt(args.output_file, xyz_coords, delimiter=",")
+    np.savetxt(args.output_file, xyz_coords, delimiter=",", header="ID,X,Y,Z", comments="")
 
 
 if __name__ == "__main__":
