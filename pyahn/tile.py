@@ -12,7 +12,7 @@ class Tile:
     URL_PARAMS: str = "&imageSR=&time=&format=tiff&pixelType=F64&noData=&noDataInterpretation=esriNoDataMatchAny&interpolation=+RSP_BilinearInterpolation&compression=&compressionQuality=&bandIds=&mosaicRule=&renderingRule=&f=image"
     DATA_RESOLUTION: float = 0.5
     DATA_FACTOR: int = 2
-    DATA_OFFSET: int = 1
+    DATA_OFFSET: int = 0
 
     def __init__(self, data_dir: str = "out", filename: str = "data.tiff"):
         self.data_dir = data_dir
