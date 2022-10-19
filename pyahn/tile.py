@@ -8,13 +8,24 @@ from tifffile import imread
 
 
 class Tile:
-    URL_BASE: str = "https://ahn.arcgisonline.nl/arcgis/rest/services/Hoogtebestand/AHN4_DTM_50cm/ImageServer/exportImage?bbox="
+    DATASETS: List[str] = [
+        "AHN3_5m",
+        "AHN3_i",
+        "AHN3_r",
+        "AHN4_DSM_50cm",
+        "AHN4_DSM_5m",
+        "AHN4_DTM_50cm",
+        "AHN4_DTM_5m"
+    ]
+
+    URL_BASE: str = "https://ahn.arcgisonline.nl/arcgis/rest/services/Hoogtebestand/"
     URL_PARAMS: str = "&imageSR=&time=&format=tiff&pixelType=F64&noData=&noDataInterpretation=esriNoDataMatchAny&interpolation=+RSP_BilinearInterpolation&compression=&compressionQuality=&bandIds=&mosaicRule=&renderingRule=&f=image"
     DATA_RESOLUTION: float = 0.5
     DATA_FACTOR: int = 2
     DATA_OFFSET: int = 0
 
-    def __init__(self, data_dir: str = "out", filename: str = "data.tiff"):
+    def __init__(self, dataset: str, data_dir: str = "out", filename: str = "data.tiff"):
+        self.dataset = dataset
         self.data_dir = data_dir
         self.filename = filename
         
@@ -35,17 +46,17 @@ class Tile:
         return cls.from_ahn4_2points(xmin, ymin, xmax, ymax)
 
     @classmethod
-    def from_ahn4_2points(cls, xmin: int, ymin: int, xmax: int, ymax: int) -> 'Tile':
+    def from_ahn4_2points(cls, dataset: str, xmin: int, ymin: int, xmax: int, ymax: int) -> 'Tile':
         xmin = xmin - 1
         xmax = xmax + 1
         ymin = ymin - 1
         ymax = ymax + 1
 
-        result = Tile()
+        result = Tile(dataset)
         size_x = (xmax - xmin) * cls.DATA_FACTOR
         size_y = (ymax - ymin) * cls.DATA_FACTOR
         urllib.request.urlretrieve(
-            f"{cls.URL_BASE}{xmin},{ymin},{xmax},{ymax}&bboxSR=&size={size_x},{size_y}{cls.URL_PARAMS}",
+            f"{cls.URL_BASE}{dataset}/ImageServer/exportImage?bbox={xmin},{ymin},{xmax},{ymax}&bboxSR=&size={size_x},{size_y}{cls.URL_PARAMS}",
             f"{result.data_path}",
         ) # note that this might include interpolated values, check the API for the details
         result.xmin = xmin
@@ -77,8 +88,9 @@ class Tile:
 
 def main():
     parser = argparse.ArgumentParser(description="Extract Z points for XY coordinates in a csv file.")
-    parser.add_argument("-i", "--input_file", help="Path to the csv file.", required=True)
-    parser.add_argument("-o", "--output_file", help="Path to the csv file.", default="out/xyz.csv")
+    parser.add_argument("-d", "--dataset", help="AHN dataset to use for downloading the tile.", default="AHN4_DTM_50cm", choices=Tile.DATASETS, type=str)
+    parser.add_argument("-i", "--input_file", help="Path to the csv file.", required=True, type=str)
+    parser.add_argument("-o", "--output_file", help="Path to the csv file.", default="out/xyz.csv", type=str)
     args = parser.parse_args()
     
     xy_coords = np.loadtxt(args.input_file, skiprows=1, delimiter=",")

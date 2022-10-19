@@ -5,7 +5,7 @@ from pyahn.tile import Tile
 
 class TestTileHelper(unittest.TestCase):
     def test_list_int(self):
-        tile = Tile.from_ahn4_2points(131000, 476400, 131300, 476750)
+        tile = Tile.from_ahn4_2points("AHN4_DTM_50cm", 131000, 476400, 131300, 476750)
 
         self.assertEqual(round(tile.get_z(131178.7, 476558.84), 4), -0.0228)
         self.assertEqual(round(tile.get_z(131178.47, 476558.79), 4), 0.0572)
