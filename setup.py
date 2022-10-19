@@ -27,7 +27,8 @@ setup(
         "tifffile==2022.4.8"
     ],
     tests_require=[
-        "pytest==7.1.3"
+        "pytest==7.1.3",
+        "pytest-cov==4.0.0"
     ],
     entry_points={
         "console_scripts": [
