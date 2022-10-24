@@ -2,6 +2,9 @@ init:
     pip install -r requirements.txt
 
 test:
-    python -m pytest --cov=pyahn tests
+    python -m coverage run --source=pyahn -m pytest -v tests
 
-.PHONY: init test
+coverage:
+    python -m coverage report -m
+
+.PHONY: init test coverage
