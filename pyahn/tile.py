@@ -12,8 +12,6 @@ from tifffile import imread
 class Tile:
     DATASETS: List[str] = [
         "AHN3_5m",
-        "AHN3_i",
-        "AHN3_r",
         "AHN4_DSM_50cm",
         "AHN4_DSM_5m",
         "AHN4_DTM_50cm",
@@ -30,8 +28,10 @@ class Tile:
         self.xmin = xmin
         self.ymax = ymax
         self.data = data
-        # TODO: set resolution according to dataset
-        self.resolution = 0.5
+        if self.dataset == "AHN3_5m" or self.dataset == "AHN4_DSM_5m" or self.dataset == "AHN4_DTM_5m":
+            self.resolution = 5
+        else:
+            self.resolution = 0.5
         self.xmax = xmin + int(data.shape[1] * self.resolution)
         self.ymin = ymax - int(data.shape[0] * self.resolution)
 
