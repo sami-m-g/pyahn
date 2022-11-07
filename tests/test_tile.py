@@ -7,7 +7,7 @@ import numpy as np
 from pyahn.tile import Tile, main as tile_main
 
 
-class TestTileHelper(unittest.TestCase):
+class TestTile(unittest.TestCase):
     def test_tile_main(self):
         input_data = [
             "ID,X,Y\n",
