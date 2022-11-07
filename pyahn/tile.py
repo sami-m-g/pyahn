@@ -8,6 +8,8 @@ from typing import List
 import numpy as np
 from tifffile import imread
 
+from pyahn.url_params import UrlParams
+
 
 class Tile:
     DATASETS: List[str] = [
@@ -21,7 +23,7 @@ class Tile:
     ]
 
     URL_BASE: str = "https://ahn.arcgisonline.nl/arcgis/rest/services/Hoogtebestand/"
-    URL_PARAMS: str = "&imageSR=&time=&format=tiff&pixelType=F64&noData=&noDataInterpretation=esriNoDataMatchAny&interpolation=+RSP_BilinearInterpolation&compression=&compressionQuality=&bandIds=&mosaicRule=&renderingRule=&f=image"
+    URL_PARAMS: str = UrlParams().to_string()
     DATA_FACTOR: int = 2
     OUTPUT_DIR = "out"
 
