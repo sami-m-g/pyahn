@@ -12,6 +12,8 @@ from tifffile import imread
 class Tile:
     DATASETS: List[str] = [
         "AHN3_5m",
+        "AHN3_i",
+        "AHN3_r",
         "AHN4_DSM_50cm",
         "AHN4_DSM_5m",
         "AHN4_DTM_50cm",
