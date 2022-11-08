@@ -7,4 +7,7 @@ test:
 coverage:
     python -m coverage report -m
 
-.PHONY: init test coverage
+run:
+    python -m pyahn.core -i data/ellipsis_sample.csv
+
+.PHONY: init test coverage run
