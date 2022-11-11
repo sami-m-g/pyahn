@@ -1,6 +1,7 @@
 import ellipsis as el
+import geopandas as gpd
 import pandas as pd
-from scipy import interpolate
+from shapely import geometry
 
 from pyahn.model import DatasetIds
 
@@ -8,8 +9,9 @@ from pyahn.model import DatasetIds
 class EllipsisHelper:
     DOWNSAMPLE_WIDTH: int = 1000
     DOWNSAMPLE_HEIGHT: int = 1000
-    DOWNSAMPLE_EPSG: int = 4326
-    DOWNSAMPLE_RASTER_KEY: str = "raster"
+    KEY_DOWNSAMPLE_RASTER: str = "raster"
+    KEY_GDF_GEOMETRY: str = "geometry"
+    ELLIPSIS_CRS: str = "EPSG:4326"
     INTERPOLATION_KIND: str = "linear"
 
     # You can find relevant ids by going to this link: https://app.ellipsis-drive.com/drive/me?pathId=8d73b2b1-e1b0-4ec6-85e2-e53f7a580332
@@ -28,42 +30,28 @@ class EllipsisHelper:
     }
 
     @staticmethod
-    def get_z_points(xy_points: pd.DataFrame, dataset: str) -> list[float]:
+    def change_crs(line: list[list[float]], from_crs: str, to_crs: str) -> list[float]:
+        line_sh = geometry.LineString(line)
+        line_gdf = gpd.GeoDataFrame({EllipsisHelper.KEY_GDF_GEOMETRY: [line_sh]})
+        line_gdf.crs = from_crs
+        line_gdf = line_gdf.to_crs(to_crs)
+        return line_gdf[EllipsisHelper.KEY_GDF_GEOMETRY].values[0]
+
+    @staticmethod
+    def get_z_points(xy_points: pd.DataFrame, dataset: str, input_crs: str  = "EPSG:28992") -> list[float]:
+        # Get xy_points_line from dataframe
         dataset_ids = EllipsisHelper.DATASETS_MAP[dataset]
         x_points = xy_points[FileHelper.COLUMN_KEY_X].to_list()
         y_points = xy_points[FileHelper.COLUMN_KEY_Y].to_list()
+        xy_points_line = [[x_points[i], y_points[i]] for i in range(len(xy_points))]
 
-        # The first action is to cacluate a bounding box for the raster we need to retrieve
-        x_min = min(x_points)
-        x_max = max(x_points)
-        y_min = min(y_points)
-        y_max = max(y_points)
+        # Convert from RDNAP to WGS84
+        line_el = EllipsisHelper.change_crs(xy_points_line, input_crs, EllipsisHelper.ELLIPSIS_CRS)
 
-        # Now we retrieve the needed raster we use epsg = 4326 but we can use other coordinates as well
-        extent = {"xMin": x_min, "xMax": x_max, "yMin": y_min, "yMax": y_max}
-        downsample_raster = el.path.raster.timestamp.getDownsampledRaster(
-            pathId=dataset_ids.path_id, timestampId=dataset_ids.time_stamp_id, extent=extent,
-            width=EllipsisHelper.DOWNSAMPLE_WIDTH, height=EllipsisHelper.DOWNSAMPLE_HEIGHT, epsg=EllipsisHelper.DOWNSAMPLE_EPSG
+        values = el.path.raster.timestamp.getValuesAlongLine(
+            pathId=dataset_ids.path_id, timestampId=dataset_ids.time_stamp_id, line=line_el
         )
-        raster = downsample_raster[EllipsisHelper.DOWNSAMPLE_RASTER_KEY][:,:,0]
-
-        # Now we use scipy to interpolate a nice line out of this
-        # Scipy interpolate wishes to receive 3 arrays. One 1D array with x-coordinates, one 1D array with y-coordinates,
-        # and one 2D array with values (the altitudes in this case) for the x,y coordinate grid
-        # If we give this to the scipy interpolation it will return us a function that interpolates based on the given values
-        # First we construct the coordinate grid
-        raster_len = raster.shape[0]
-        x = [ x_min + i * (x_max - x_min) / (raster_len - 1) for i in range(raster_len) ]
-        y = [ y_min + i * (y_max - y_min) / (raster_len - 1) for i in range(raster_len) ]
-
-        # Now we can create an interpolation function using scipy
-        interopolation_function = interpolate.interp2d(x, y, raster, kind=EllipsisHelper.INTERPOLATION_KIND)
-        # Now all that is left is to run this function on our line segment x and y coordinates an retrieve a new grid
-        interpolated_raster = interopolation_function(x_points, y_points)
-        # The diagonal of this grid gives us the needed line
-        z_points = [interpolated_raster[x, x] for x in range(len(x_points))]
-
-        return z_points
+        return [value[0] for value in values]
 
 
 class FileHelper:
