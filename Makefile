@@ -1,6 +1,9 @@
 init:
     pip install -r requirements.txt
 
+lint:
+	python -m flake8 --max-line-length 150
+
 test:
     python -m coverage run --source=pyahn -m pytest -v tests
 

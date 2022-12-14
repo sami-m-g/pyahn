@@ -38,7 +38,7 @@ class EllipsisHelper:
         return line_gdf[EllipsisHelper.KEY_GDF_GEOMETRY].values[0]
 
     @staticmethod
-    def get_z_points(xy_points: pd.DataFrame, dataset: str, input_crs: str  = "EPSG:28992") -> list[float]:
+    def get_z_points(xy_points: pd.DataFrame, dataset: str, input_crs: str = "EPSG:28992") -> list[float]:
         # Get xy_points_line from dataframe
         dataset_ids = EllipsisHelper.DATASETS_MAP[dataset]
         x_points = xy_points[FileHelper.COLUMN_KEY_X].to_list()
