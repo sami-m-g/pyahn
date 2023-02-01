@@ -1,3 +1,4 @@
+"""Setup for pyahn."""
 #!/usr/bin/env python
 
 from setuptools import setup, find_packages
@@ -6,8 +7,8 @@ from pyahn import __version__
 
 
 def readme():
-    with open("README.md") as f:
-        return f.read()
+    with open("README.md", encoding="utf-8") as readme_file:
+        return readme_file.read()
 
 
 setup(
@@ -31,6 +32,7 @@ setup(
     ],
     tests_require=[
         "coverage==6.5.0",
+        "pandas==1.5.0",
         "pytest==7.1.3"
     ],
     entry_points={
