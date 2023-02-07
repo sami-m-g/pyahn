@@ -9,6 +9,7 @@ from pyahn.helpers import FileHelper
 
 
 def test_main():
+    """Gets Z points almost equal to expected."""
     dataset = "AHN4_DTM_0.5m"
     input_data = [
         "ID,X,Y\n",
