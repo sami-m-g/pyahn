@@ -2,7 +2,6 @@
 from typing import Dict, List
 
 import ellipsis as el
-import geopandas as gpd
 import pandas as pd
 from shapely import geometry
 
@@ -50,32 +49,24 @@ class EllipsisHelper:
     }
 
     @staticmethod
-    def _change_crs(line: List[List[float]], from_crs: str, to_crs: str) -> List[float]:
-        """Helper function for changing coordinate reference system(crs)."""
-        line_sh = geometry.LineString(line)
-        line_gdf = gpd.GeoDataFrame({EllipsisHelper.KEY_GDF_GEOMETRY: [line_sh]})
-        line_gdf.crs = from_crs
-        line_gdf = line_gdf.to_crs(to_crs)
-        return line_gdf[EllipsisHelper.KEY_GDF_GEOMETRY].values[0]
-
-    @staticmethod
     def get_z_points(
-        xy_points: pd.DataFrame, dataset: str, input_crs: str = "EPSG:28992"
+        xy_points: pd.DataFrame, dataset_name: str, epsg: int = 28992
     ) -> List[float]:
         """Returns the List of Z points corresponding to xy points according to dataset."""
         # Get xy_points_line from dataframe
-        dataset_ids = EllipsisHelper.DATASETS_MAP[dataset]
+        dataset = EllipsisHelper.DATASETS_MAP[dataset_name]
         x_points = xy_points[FileHelper.COLUMN_KEY_X].to_list()
         y_points = xy_points[FileHelper.COLUMN_KEY_Y].to_list()
         xy_points_line = [[x_points[i], y_points[i]] for i in range(len(xy_points))]
-
-        # Convert from RDNAP to WGS84
-        line_el = EllipsisHelper._change_crs(xy_points_line, input_crs, EllipsisHelper.ELLIPSIS_CRS)
+        line_sh = geometry.LineString(xy_points_line)
 
         values = el.path.raster.timestamp.getValuesAlongLine(
-            pathId=dataset_ids.path_id, timestampId=dataset_ids.time_stamp_id, line=line_el
+            pathId=dataset.path_id,
+            timestampId=dataset.time_stamp_id,
+            line=line_sh,
+            epsg=epsg
         )
-        return [value[0] for value in values]
+        return [round(value[0], 2) for value in values]
 
 
 class FileHelper:
