@@ -1,3 +1,4 @@
+"""Tests for core module."""
 import os
 import tempfile
 
